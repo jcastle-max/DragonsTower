@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dragon's Tower</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a night-sky castle. Tower map on the left (Floor 1 at the bottom), the quest panel on the right; stacks on phones. Single dark look on purpose. */
+:root{
+  --night:#121829; --stone:#1f2740; --stone-2:#2a3456; --line:#3b4670;
+  --parchment:#f3e9cf; --ink:#e9e4d6; --muted:#a9b0c8;
+  --gold:#e8b54a; --knight:#7fd3e0; --dragon:#f07a52; --good:#8fd694;
+  --display:'Grenze Gotisch', Georgia, serif;
+  --body:'Atkinson Hyperlegible', Verdana, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;
+  background-image:radial-gradient(1px 1px at 12% 18%, #ffffff55 50%, transparent 51%),radial-gradient(1px 1px at 72% 9%, #ffffff44 50%, transparent 51%),radial-gradient(1.5px 1.5px at 88% 30%, #ffffff40 50%, transparent 51%),radial-gradient(1px 1px at 35% 6%, #ffffff40 50%, transparent 51%),radial-gradient(1px 1px at 55% 22%, #ffffff33 50%, transparent 51%);
+  background-attachment:fixed}
+.wrap{max-width:1080px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(44px,8vw,72px);line-height:.95;margin:0;color:var(--gold);letter-spacing:.5px;text-wrap:balance}
+.tag{margin:6px 0 0;color:var(--muted);max-width:52ch}
+.purse{display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:var(--stone);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip b{color:var(--gold)}
+.main{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+/* tower */
+.tower{background:linear-gradient(180deg,var(--stone-2),var(--stone));border:1px solid var(--line);border-radius:6px 6px 0 0;padding:14px 12px 12px;position:relative}
+.tower::before{content:"";position:absolute;left:-1px;right:-1px;top:-14px;height:14px;
+  background:repeating-linear-gradient(90deg,var(--stone-2) 0 22px,transparent 22px 36px);border-radius:3px 3px 0 0}
+.tower h2{font-family:var(--display);font-size:28px;margin:4px 4px 10px;color:var(--parchment);font-weight:500}
+.floors{display:flex;flex-direction:column-reverse;gap:8px;margin:0;padding:0;list-style:none}
+.floor{width:100%;display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;text-align:left;
+  background:var(--night);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:9px 10px;cursor:pointer;font:inherit}
+.floor:hover:not(:disabled),.floor:focus-visible{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px #e8b54a55}
+.floor:disabled{opacity:.55;cursor:not-allowed}
+.floor .num{font-family:var(--display);font-size:24px;color:var(--gold);text-align:center}
+.floor .nm{font-weight:700;line-height:1.2}
+.floor .sk{display:block;font-size:13px;color:var(--muted);font-weight:400}
+.stars{color:var(--gold);letter-spacing:1px;font-size:15px;white-space:nowrap}
+.stars .off{color:#4b5580}
+.floor.boss{border-color:#7a3a2a;background:linear-gradient(90deg,#2a1714,var(--night))}
+.floor.boss .num{color:var(--dragon)}
+.gate{height:26px;margin:10px auto 0;width:70px;border-radius:35px 35px 0 0;background:#0b0f1c;border:1px solid var(--line);border-bottom:none}
+.tower-foot{font-size:13px;color:var(--muted);margin:10px 4px 0}
+.reset{background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;font-size:13px;padding:0}
+/* panel */
+.panel{background:var(--parchment);color:#2a2234;border-radius:6px;padding:clamp(18px,4vw,32px);min-height:420px;box-shadow:0 10px 40px #0007;display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,42px);margin:0;line-height:1;color:#3a2a14}
+.panel p{margin:0;max-width:62ch}
+.eyebrow{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;color:#8a5a12}
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.howto div{background:#eadcb8;border-radius:4px;padding:12px 14px}
+.howto b{display:block;color:#3a2a14}
+.typing{font-size:15px;background:#fff8e6;border:1px dashed #b89a5c;border-radius:4px;padding:10px 14px}
+code{font-family:var(--body);background:#e2d2a8;border-radius:3px;padding:0 5px;font-weight:700}
+.statusbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.hearts{font-size:24px;letter-spacing:2px;color:#c0392b}
+.hearts .lost{color:#c9b98f}
+.pips{display:flex;gap:6px}
+.pip{width:18px;height:18px;border-radius:50%;border:2px solid #8a5a12}
+.pip.on{background:#8a5a12}
+.streak{font-weight:700;color:#8a5a12;font-variant-numeric:tabular-nums}
+.dragonbar{display:flex;align-items:center;gap:10px;font-weight:700;color:#7a2a14}
+.hp{flex:1;min-width:120px;height:14px;background:#d9c9a0;border-radius:7px;overflow:hidden}
+.hp i{display:block;height:100%;background:linear-gradient(90deg,#c0392b,#f07a52);transition:width .4s}
+.problem{background:#fffaf0;border:2px solid #d2bd88;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.qtext{font-size:18px;max-width:58ch}
+.expr{font-size:clamp(28px,6vw,44px);font-weight:700;line-height:1.3;color:#2a2234;overflow-x:auto;max-width:100%}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.72em;line-height:1.1;margin:0 2px}
+.fr>span:first-child{border-bottom:2px solid currentColor;padding:0 3px}
+.fr>span:last-child{padding:0 3px}
+.answer-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+input[type=text]{font:inherit;font-size:22px;font-weight:700;padding:10px 14px;border:2px solid #8a5a12;border-radius:4px;width:min(260px,100%);text-align:center;background:#fff;color:#2a2234}
+input[type=text]:focus{outline:3px solid #e8b54a;outline-offset:1px}
+.btn{font:inherit;font-weight:700;font-size:17px;border-radius:4px;padding:10px 18px;cursor:pointer;border:2px solid #3a2a14;background:#3a2a14;color:var(--parchment)}
+.btn:hover{background:#56401f}
+.btn.ghost{background:transparent;color:#3a2a14}
+.btn.ghost:hover{background:#eadcb8}
+.btn:focus-visible{outline:3px solid #e8b54a;outline-offset:2px}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.choice{font:inherit;font-size:20px;font-weight:700;padding:12px 18px;border-radius:4px;border:2px solid #3a2a14;background:#fff;color:#2a2234;cursor:pointer;min-width:120px}
+.choice:hover,.choice:focus-visible{background:#f3e3b8;outline:none}
+.choice small{display:block;font-size:13px;font-weight:400;color:#5b4a2a}
+.hint{font-size:15px;background:#eef3fb;border-left:4px solid #3d6bb3;padding:8px 12px;border-radius:2px;color:#1f2f4f;align-self:stretch;text-align:left}
+.feedback{border-radius:4px;padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.feedback.ok{background:#e3f4e1;border-left:5px solid #2e7d32;color:#1b4a1e}
+.feedback.no{background:#fbe5dc;border-left:5px solid #b23b1d;color:#5e1d0d}
+.feedback .big{font-weight:700;font-size:19px}
+.end{display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.end .bigstars{font-size:46px;color:#b8860b;letter-spacing:4px}
+.end .bigstars .off{color:#d6c7a0}
+.report{background:#eadcb8;border-radius:4px;padding:12px 16px;width:100%}
+.report ul{margin:6px 0 0;padding-left:20px;columns:2;column-gap:24px}
+@media (max-width:520px){.report ul{columns:1}}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.confirm{background:#2a1714;border:1px solid #7a3a2a;border-radius:4px;padding:10px;margin-top:8px;font-size:13px;display:flex;flex-direction:column;gap:8px}
+.confirm .row button{font:inherit;font-size:13px;padding:4px 10px;border-radius:3px;cursor:pointer}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+.pop{animation:pop .4s}
+@keyframes pop{50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.shake,.pop{animation:none}.hp i{transition:none}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Dragon's Tower</h1>
+      <p class="tag">Climb the castle one floor at a time. Each floor is a skill from Operations with Rational Numbers, and each one is harder than the last. Clear enough floors and the dragon will face you.</p>
+    </div>
+    <div class="purse" aria-live="polite">
+      <span class="chip">Gold <b id="gold">0</b></span>
+      <span class="chip">Floors cleared <b id="cleared">0</b>/9</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <nav class="tower" aria-label="Tower floors">
+      <h2>The Tower</h2>
+      <ol class="floors" id="floors"></ol>
+      <div class="gate" aria-hidden="true"></div>
+      <p class="tower-foot">Pick any open floor. The Dragon's Lair opens after you clear 4 floors. <button class="reset" id="resetBtn" type="button">Start over</button></p>
+      <div id="confirmBox" hidden class="confirm">
+        <span>Erase your stars and gold on this computer?</span>
+        <div class="row"><button type="button" id="yesReset">Yes, start over</button><button type="button" id="noReset">Keep my progress</button></div>
+      </div>
+    </nav>
+
+    <main class="panel" id="panel" aria-live="polite"></main>
+  </div>
+</div>
+
+<script>
+(function(){
+/* ---------- exact fractions ---------- */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=a%b;a=b;b=t}return a||1}
+function R(n,d){if(d===undefined)d=1;if(d<0){n=-n;d=-d}var g=gcd(n,d);return {n:n/g,d:d/g}}
+function add(a,b){return R(a.n*b.d+b.n*a.d,a.d*b.d)}
+function sub(a,b){return R(a.n*b.d-b.n*a.d,a.d*b.d)}
+function mul(a,b){return R(a.n*b.n,a.d*b.d)}
+function dvd(a,b){return R(a.n*b.d,a.d*b.n)}
+function pw(a,k){var r=R(1);for(var i=0;i<k;i++)r=mul(r,a);return r}
+function neg(a){return R(-a.n,a.d)}
+function eq(a,b){return a.n===b.n&&a.d===b.d}
+function terminating(r){var d=r.d;while(d%2===0)d/=2;while(d%5===0)d/=5;return d===1}
+function decStr(r){
+  if(!terminating(r))return null;
+  var k=0,p=1;while(p%r.d!==0){p*=10;k++}
+  var v=Math.abs(r.n)*(p/r.d),s=String(v);
+  if(k>0){while(s.length<=k)s='0'+s;s=s.slice(0,s.length-k)+'.'+s.slice(s.length-k)}
+  return (r.n<0?'−':'')+s;
+}
+function M(s){return s.replace(/-/g,'−')}
+function frH(n,d){return '<span class="fr"><span>'+n+'</span><span>'+d+'</span></span>'}
+/* show a value: fraction (improper + mixed) or decimal */
+function show(r,pref){
+  if(r.d===1)return M(String(r.n));
+  var ds=decStr(r);
+  if(pref==='dec'&&ds)return ds;
+  var s=(r.n<0?'−':'')+frH(Math.abs(r.n),r.d);
+  if(Math.abs(r.n)>r.d){var w=Math.floor(Math.abs(r.n)/r.d),m=Math.abs(r.n)%r.d;s+=' = '+(r.n<0?'−':'')+w+' '+frH(m,r.d)}
+  if(ds&&pref!=='frac')s+=' = '+ds;
+  return s;
+}
+/* operands: value + how it is written */
+function F(n,d,s){return {r:R(s*n,d),neg:s<0,h:(s<0?'−':'')+frH(n,d)}}
+function MX(w,n,d,s){return {r:R(s*(w*d+n),d),neg:s<0,h:(s<0?'−':'')+w+' '+frH(n,d),mixed:true,imp:(s<0?'−':'')+frH(w*d+n,d)}}
+function DC(iv,pl,s){var p=Math.pow(10,pl);return {r:R(s*iv,p),neg:s<0,h:(s<0?'−':'')+(iv/p).toFixed(pl),pl:pl,iv:iv}}
+function N(v){return {r:R(v),neg:v<0,h:M(String(v))}}
+function P(o){return o.neg?'('+o.h+')':o.h}
+function ri(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function sg(p){return Math.random()<p?-1:1}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function signNote(count){return count+' negative sign'+(count===1?'':'s')+' → '+(count%2===0?'even, so the answer is positive':'odd, so the answer is negative')}
+
+/* ---------- answer parsing ---------- */
+function parse(raw){
+  var s=String(raw).trim().replace(/[−–—]/g,'-').replace(/\s+/g,' ').replace(/^\+/,'').replace(/\$/g,'').replace(/,/g,'');
+  var m;
+  if(m=s.match(/^(-?)(\d+)$/))return R((m[1]?-1:1)*+m[2]);
+  if(m=s.match(/^(-?)(\d*)\.(\d+)$/)){var p=Math.pow(10,m[3].length);return R((m[1]?-1:1)*(+(m[2]||0)*p+ +m[3]),p)}
+  if(m=s.match(/^(-?)(\d+) ?\/ ?(\d+)$/)){if(+m[3]===0)return null;return R((m[1]?-1:1)*+m[2],+m[3])}
+  if(m=s.match(/^(-?)(\d+) (\d+) ?\/ ?(\d+)$/)){if(+m[4]===0)return null;var d=+m[4];return R((m[1]?-1:1)*(+m[2]*d+ +m[3]),d)}
+  return null;
+}
+
+/* ---------- problem makers (t = 0..4, harder as t grows) ---------- */
+function gFracAddSub(t){
+  var dens=t<2?[2,3,4,6,8]:[3,4,5,6,8,10,12];
+  var d1=pick(dens),d2=t===0?d1*pick([1,2]):pick(dens);
+  if(d2>12)d2=d1;
+  var a=F(ri(1,d1-1),d1,t===0?1:sg(.5)),b=F(ri(1,d2-1),d2,t===0?1:sg(.5));
+  var op=t===0?'+':pick(['+','−']);
+  var ans=op==='+'?add(a.r,b.r):sub(a.r,b.r);
+  var L=d1*d2/gcd(d1,d2);
+  var an=a.r.n*(L/a.r.d), bn=b.r.n*(L/b.r.d);
+  return {q:'Simplify.',e:P(a)+' '+op+' '+P(b),ans:ans,pref:'frac',
+    hint:'Find a common denominator first. The least common denominator of '+d1+' and '+d2+' is '+L+'.',
+    ex:'Rewrite with denominator '+L+': '+(an<0?'(−'+frH(-an,L)+')':frH(an,L))+' '+op+' '+(bn<0?'(−'+frH(-bn,L)+')':frH(bn,L))+' = '+show(ans,'frac')+(op==='−'?'. Subtracting means adding the opposite.':'.')};
+}
+function gDecMixed(t){
+  var op=pick(['+','−']);
+  if(t<3){
+    var pa=pick([1,2]),pb=pick([1,2]);
+    var a=DC(pa===1?ri(11,99):ri(101,999),pa,t===0?1:sg(.5)),b=DC(pb===1?ri(11,99):ri(101,999),pb,sg(t===0?0:.5));
+    var ans=op==='+'?add(a.r,b.r):sub(a.r,b.r);
+    var ex=op==='−'?P(a)+' − '+P(b)+' is the same as '+P(a)+' + '+P(DC(b.iv,b.pl,b.neg?1:-1))+'. ':'';
+    return {q:'Simplify.',e:P(a)+' '+op+' '+P(b),ans:ans,pref:'dec',
+      hint:'Line up the decimal points. Subtracting a number is the same as adding its opposite.',
+      ex:ex+'Line up the decimals and combine: '+show(ans,'dec')+'.'};
+  }
+  var d1=pick([2,3,4,6,8]),d2=pick([2,3,4,6,8]);
+  var x=MX(ri(1,5),ri(1,d1-1),d1,sg(.5)),y=MX(ri(1,4),ri(1,d2-1),d2,sg(.5));
+  var ans2=op==='+'?add(x.r,y.r):sub(x.r,y.r);
+  return {q:'Simplify. You can answer as a fraction or a mixed number.',e:P(x)+' '+op+' '+P(y),ans:ans2,pref:'frac',
+    hint:'Change each mixed number to an improper fraction, then use a common denominator.',
+    ex:'As improper fractions: '+(x.neg?'('+x.imp+')':x.imp)+' '+op+' '+(y.neg?'('+y.imp+')':y.imp)+' = '+show(ans2,'frac')+'.'};
+}
+function gFracMulDiv(t){
+  var op=t===0?'×':pick(['×','÷']);
+  function fr(){var d=ri(2,9);return F(ri(1,d+(t>1?3:-1)),d,sg(.5))}
+  function mx(){var d=pick([2,3,4,5]);return MX(ri(1,3),ri(1,d-1),d,sg(.5))}
+  var a=t>=2?mx():fr(), b=t>=3&&Math.random()<.6?mx():fr();
+  if(b.r.n===0)b=F(1,2,1);
+  var ans=op==='×'?mul(a.r,b.r):dvd(a.r,b.r);
+  var negs=(a.neg?1:0)+(b.neg?1:0);
+  var A=a.mixed?(a.neg?'(':'')+a.imp+(a.neg?')':''):P(a);
+  var Bv=b.mixed?{n:Math.abs(b.r.n),d:b.r.d}:{n:Math.abs(b.r.n)*1,d:b.r.d};
+  var ex=(a.mixed||b.mixed?'Change mixed numbers to improper fractions. ':'');
+  if(op==='×')ex+='Multiply across: '+frH(Math.abs(a.r.n*b.r.n),a.r.d*b.r.d)+'. '+signNote(negs)+'. Answer: '+show(ans,'frac')+'.';
+  else ex+='Keep, change, flip: '+A+' × '+(b.neg?'(−':'')+frH(b.r.d,Math.abs(b.r.n))+(b.neg?')':'')+'. '+signNote(negs)+'. Answer: '+show(ans,'frac')+'.';
+  return {q:'Simplify. Fractions or mixed numbers are fine.',e:P(a)+' '+op+' '+P(b),ans:ans,pref:'frac',
+    hint:op==='×'?'Multiply the numerators and the denominators. Simplify, then use the sign rules from integers.':'Keep the first fraction, change ÷ to ×, and flip the second fraction.',ex:ex};
+}
+function gDecMulDiv(t){
+  var op=t===0?'×':pick(['×','÷']);
+  if(op==='×'){
+    var a=t<2?DC(ri(12,95),1,sg(.5)):DC(ri(12,95),pick([1,2]),sg(.5));
+    var b=t<2?N(ri(2,9)*sg(.5)):DC(ri(2,9),1,sg(.5));
+    var ans=mul(a.r,b.r);
+    var ai=a.iv,bi=b.pl?b.iv:Math.abs(b.r.n),places=a.pl+(b.pl||0);
+    return {q:'Simplify.',e:P(a)+' × '+P(b),ans:ans,pref:'dec',
+      hint:'Multiply like whole numbers, then count the decimal places in both factors.',
+      ex:'Ignore the decimals: '+ai+' × '+bi+' = '+(ai*bi)+'. There are '+places+' decimal places in all, so the size is '+decStr(R(Math.abs(ans.n),ans.d))+'. '+signNote((a.neg?1:0)+(b.neg?1:0))+'. Answer: '+show(ans,'dec')+'.'};
+  }
+  var divs=t<2?[[2,0],[4,0],[5,0],[8,0]]:[[2,1],[4,1],[5,1],[6,1],[8,1],[12,1],[25,1],[25,2],[15,1]];
+  var dv=pick(divs), d=DC(dv[0],dv[1],sg(.5));
+  if(dv[1]===0)d={r:R((d.neg?-1:1)*dv[0]),neg:d.neg,h:(d.neg?'−':'')+dv[0]};
+  var q=R(ri(2,48)*sg(.5),10), dividend=mul(q,d.r);
+  var D={r:dividend,neg:dividend.n<0,h:decStr(dividend)};
+  var shift=dv[1];
+  return {q:'Simplify.',e:P(D)+' ÷ '+P(d),ans:q,pref:'dec',
+    hint:shift?'Move the decimal point in the divisor to make it a whole number. Move the dividend’s decimal the same number of places.':'Divide like whole numbers and keep the decimal point in place.',
+    ex:(shift?'Move both decimal points '+shift+' place'+(shift>1?'s':'')+': '+decStr(R(Math.abs(dividend.n)*Math.pow(10,shift),dividend.d))+' ÷ '+decStr(R(Math.abs(d.r.n)*Math.pow(10,shift),d.r.d))+'. ':'')+signNote((D.neg?1:0)+(d.neg?1:0))+'. Answer: '+show(q,'dec')+'.'};
+}
+function gSigns(t){
+  var k=3+Math.floor(t/2),fs=[],negs=0,zero=t>=1&&Math.random()<.22,zi=zero?ri(0,k-1):-1;
+  for(var i=0;i<k;i++){
+    if(i===zi){fs.push(N(0));continue}
+    var s=sg(.55),f=Math.random()<.5?F(ri(1,5),ri(2,9),s):DC(ri(2,25),1,s);
+    if(f.r.n===0)f=F(1,2,s);
+    if(f.neg)negs++;
+    fs.push(f);
+  }
+  var e=P(fs[0]),val=fs[0].r;
+  for(i=1;i<k;i++){
+    var div=t>=3&&i===k-1&&fs[i].r.n!==0;
+    e+=div?' ÷ '+P(fs[i]):P(fs[i]).charAt(0)==='('?P(fs[i]):'('+fs[i].h+')';
+    val=div?dvd(val,fs[i].r):mul(val,fs[i].r);
+  }
+  var correct=val.n===0?2:(val.n>0?0:1);
+  return {q:'Don’t calculate! Is the answer a Knight, a Dragon, or in the Moat?',e:e,choices:['Knight<small>positive</small>','Dragon<small>negative</small>','Moat<small>zero</small>'],correct:correct,
+    hint:'Count the negative signs. Look for a 0 too.',
+    ex:(val.n===0?'One factor is 0, so the whole product is 0. That is the Moat.':signNote(negs)+'.')+' The exact answer is '+show(val,'frac')+'.'};
+}
+function gExp(t){
+  var fr=[[1,2],[1,3],[2,3],[3,4],[2,5],[3,2],[1,4],[4,5],[5,2]],dc=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[11,1],[12,1],[15,1]];
+  var base,n,trap=false;
+  if(t===0){var f=pick(fr);base=F(f[0],f[1],1);n=ri(2,3)}
+  else if(t===1){var c=pick(dc);base=DC(c[0],c[1],1);n=c[0]>9?2:ri(2,3)}
+  else if(t===2){f=pick(fr);base=F(f[0],f[1],-1);n=ri(2,4);if(f[0]>2&&n>3)n=3}
+  else if(t===3){c=pick(dc);base=DC(c[0],c[1],-1);n=c[0]>9?pick([2,3]):ri(2,4)}
+  else{ if(Math.random()<.5){f=pick([[1,2],[2,3],[3,4],[1,3]]);base=F(f[0],f[1],1);n=2;trap=true}
+        else{var d=pick([2,3,4]);base=MX(1,ri(1,d-1),d,sg(.5));n=2} }
+  var ans=trap?neg(pw(base.r,n)):pw(base.r,n);
+  var pref=base.pl?'dec':'frac';
+  var e=(trap?'−':'')+'('+base.h+')<sup>'+n+'</sup>';
+  var rep=[];for(var i=0;i<n;i++)rep.push('('+base.h+')');
+  var ex=trap?'The parentheses hold only '+base.h+', so the base is positive. Find ('+base.h+')<sup>2</sup> = '+show(pw(base.r,2),'frac')+', then take the opposite: '+show(ans,'frac')+'.'
+    :(base.mixed?'Change to an improper fraction first: '+base.imp+'. ':'')+'Write it out: '+rep.join('')+'. '+(base.neg?signNote(n)+'. ':'')+'Answer: '+show(ans,pref)+'.';
+  return {q:'Simplify.',e:e,ans:ans,pref:pref,hint:trap?'Look closely at what is inside the parentheses. Is the negative part of the base?':'The exponent tells how many times the base is a factor. Multiply the base by itself.',ex:ex};
+}
+function gEstimate(t){
+  var op=t<2?'×':pick(['×','÷']),a,b,ar,br,E,exact;
+  function nz(){return (ri(1,4)/10)*sg(.5)}
+  if(op==='×'){ar=ri(2,12);br=ri(2,9);a=Math.round((ar+nz())*100)/100;b=Math.round((br+nz())*10)/10}
+  else{br=ri(2,9);var qE=ri(2,9);ar=qE*br;a=Math.round((ar+nz())*100)/100;b=Math.round((br+nz()/2)*10)/10}
+  var sa=sg(.5),sb=t===0?1:sg(.5);a*=sa;b*=sb;ar*=sa;br*=sb;
+  E=op==='×'?ar*br:ar/br;
+  var A=DC(Math.round(Math.abs(a)*100),2,sa),B=DC(Math.round(Math.abs(b)*10),1,sb);
+  exact=op==='×'?mul(A.r,B.r):dvd(A.r,B.r);
+  var opts=[E,-E,E*10,E/10],uniq=[];
+  opts.forEach(function(v){if(uniq.indexOf(v)<0)uniq.push(v)});
+  var choices=shuffle(uniq.slice());
+  var exStr=decStr(exact)||(exact.n/exact.d).toFixed(3);
+  if(!decStr(exact))exStr='about '+M((exact.n/exact.d).toFixed(2));
+  return {q:'Which is the best estimate?',e:P(A)+' '+op+' '+P(B),choices:choices.map(function(v){return M(String(+v.toFixed(2)))}),correct:choices.indexOf(E),
+    hint:'Round each number to the nearest whole number. Then decide the sign.',
+    ex:'Round: '+A.h+' ≈ '+M(String(ar))+' and '+B.h+' ≈ '+M(String(br))+'. '+M(String(ar))+' '+op+' '+(br<0?'('+M(String(br))+')':br)+' = '+M(String(E))+'. The exact answer is '+exStr+', which is close.'};
+}
+function gWord(t){
+  var pool=[
+    function(){var T=ri(2,12),D=pick([['1.5',3,2],['2.5',5,2],['3.5',7,2],['2.25',9,4]]),H=ri(3,6),ans=sub(R(T),mul(R(D[1],D[2]),R(H)));
+      return {q:'At 6 p.m. the temperature was '+T+'°F. It dropped '+D[0]+' degrees every hour for '+H+' hours. What was the temperature after '+H+' hours?',e:'',ans:ans,pref:'dec',hint:'Find the total drop first: degrees per hour × hours.',ex:D[0]+' × '+H+' = '+show(mul(R(D[1],D[2]),R(H)),'dec')+' degrees. '+T+' − '+show(mul(R(D[1],D[2]),R(H)),'dec')+' = '+show(ans,'dec')+'°F.'}},
+    function(){var s=[ri(-4,3),ri(-4,3),ri(-4,3),ri(-4,3)],sum=s.reduce(function(x,y){return x+y},0),ans=R(sum,4);
+      return {q:'A golfer’s scores compared to par for four rounds were '+s.map(function(v){return M(String(v>0?'+'+v:v))}).join(', ')+'. What is the mean (average) score?',e:'',ans:ans,pref:'dec',hint:'Add all four scores, then divide by 4.',ex:'Sum: '+M(String(sum))+'. '+M(String(sum))+' ÷ 4 = '+show(ans,'dec')+'.'}},
+    function(){var st=DC(ri(105,1850),2,-1),up=DC(ri(150,600),2,1),dn=DC(ri(11,99),1,1),ans=sub(add(st.r,up.r),dn.r);
+      return {q:'A diver is at '+st.h+' feet. She rises '+up.h+' feet, then dives down '+dn.h+' feet. What is her new elevation?',e:'',ans:ans,pref:'dec',hint:'Rising adds. Diving down subtracts.',ex:st.h+' + '+up.h+' − '+dn.h+' = '+show(ans,'dec')+' feet.'}},
+    function(){var bal=DC(ri(500,2500),2,-1),dep=DC(ri(30,60)*100,2,1),buy=DC(ri(1050,2999),2,1),ans=sub(add(bal.r,dep.r),buy.r);
+      return {q:'Jay’s bank balance is −$'+bal.h.slice(1)+'. He deposits $'+dep.h+', then spends $'+buy.h+' on a game. What is his balance now?',e:'',ans:ans,pref:'dec',hint:'A deposit adds money. Spending subtracts.',ex:bal.h+' + '+dep.h+' − '+buy.h+' = '+show(ans,'dec')+' dollars.'}},
+    function(){var f=pick([[1,2],[2,3],[3,4],[1,3],[3,8]]),b=pick([[1,1,2],[2,1,2],[1,3,4],[2,1,3],[3,1,2]]),A=F(f[0],f[1],1),B=MX(b[0],b[1],b[2],1),ans=mul(A.r,B.r);
+      return {q:'A recipe uses '+A.h+' cup of sugar. You make '+B.h+' batches. How many cups of sugar do you need?',e:'',ans:ans,pref:'frac',hint:'“Batches of” means multiply. Change the mixed number to an improper fraction.',ex:A.h+' × '+B.imp+' = '+show(ans,'frac')+' cups.'}},
+    function(){var p=ri(2,6),d=pick([2,3,4]),T=MX(ri(2,5),ri(1,d-1),d,1),ans=dvd(T.r,R(p));
+      return {q:p+' friends share '+T.h+' pizzas equally. How much pizza does each friend get?',e:'',ans:ans,pref:'frac',hint:'Sharing equally means divide. Change the mixed number to an improper fraction first.',ex:T.imp+' ÷ '+p+' = '+T.imp+' × '+frH(1,p)+' = '+show(ans,'frac')+' pizza each.'}},
+    function(){var pc=pick([[1,2],[3,4],[1,4],[2,3],[3,2]]),k=ri(5,14),L=mul(R(pc[0],pc[1]),R(k)),w=Math.floor(L.n/L.d),r=L.n%L.d;
+      var Lh=r?w+' '+frH(r,L.d):String(w);
+      return {q:'A board is '+Lh+' feet long. You cut it into pieces that are each '+frH(pc[0],pc[1])+' foot long. How many pieces do you get?',e:'',ans:R(k),pref:'frac',hint:'How many '+frH(pc[0],pc[1])+'s fit in the board? That is division.',ex:show(L,'frac').split(' = ')[0]+' ÷ '+frH(pc[0],pc[1])+' = '+show(L,'frac').split(' = ')[0]+' × '+frH(pc[1],pc[0])+' = '+k+' pieces.'}}
+  ];
+  var sets=[[0,1],[0,2,3],[2,3,4],[4,5,6],[1,5,6,2]];
+  return pool[pick(sets[t])]();
+}
+function gMistake(t){
+  var kinds=[
+    function(){var d1=pick([2,3,4,5]),d2=pick([3,4,6,8]),n1=ri(1,d1-1),n2=ri(1,d2-1);if(d1===d2)d2=d1+1;
+      var a=F(n1,d1,1),b=F(n2,d2,1),ans=add(a.r,b.r);
+      return {e:a.h+' + '+b.h,wrong:frH(n1+n2,d1+d2),ans:ans,pref:'frac',ex:'He added the denominators. You need a common denominator: the answer is '+show(ans,'frac')+'.'}},
+    function(){var a=F(ri(1,5),ri(2,7),-1),b=DC(ri(2,9),1,-1),ans=mul(a.r,b.r);
+      return {e:P(a)+P(b),wrong:show(neg(ans),'frac'),ans:ans,pref:'frac',ex:'Two negatives make a positive. The answer is '+show(ans,'frac')+'.'}},
+    function(){var a=DC(ri(2,9),1,sg(.5)),b=DC(ri(2,9),1,1),ans=mul(a.r,b.r);
+      return {e:P(a)+' × '+P(b),wrong:show(mul(ans,R(10)),'dec'),ans:ans,pref:'dec',ex:'There are 2 decimal places in all, not 1. The answer is '+show(ans,'dec')+'.'}},
+    function(){var f=pick([[2,3],[3,4],[3,5],[2,5]]),b=F(f[0],f[1],1),ans=pw(b.r,2);
+      return {e:'('+b.h+')<sup>2</sup>',wrong:frH(f[0]*f[0],f[1]),ans:ans,pref:'frac',ex:'He squared only the numerator. Square the denominator too: '+show(ans,'frac')+'.'}},
+    function(){var f=pick([[1,2],[2,3],[3,4]]),b=F(f[0],f[1],1),ans=neg(pw(b.r,2));
+      return {e:'−('+b.h+')<sup>2</sup>',wrong:show(pw(b.r,2),'frac'),ans:ans,pref:'frac',ex:'The negative is outside the parentheses, so square first, then take the opposite: '+show(ans,'frac')+'.'}},
+    function(){var a=DC(ri(11,99),1,1),b=DC(ri(105,499),2,-1),ans=sub(a.r,b.r);
+      return {e:a.h+' − '+P(b),wrong:show(add(a.r,b.r),'dec'),ans:ans,pref:'dec',ex:'Subtracting a negative means adding: '+a.h+' + '+b.h.slice(1)+' = '+show(ans,'dec')+'.'}},
+    function(){var a=F(ri(1,5),pick([2,3,4,6]),sg(.5)),b=F(ri(1,5),pick([3,5,7]),1),ans=dvd(a.r,b.r);
+      return {e:P(a)+' ÷ '+P(b),wrong:show(mul(R(a.r.d*(a.neg?-1:1),Math.abs(a.r.n)),b.r),'frac'),ans:ans,pref:'frac',ex:'He flipped the first fraction. Keep the first, change ÷ to ×, flip the second: '+show(ans,'frac')+'.'}},
+    function(){var d=pick([2,3,4]),m=MX(ri(1,3),ri(1,d-1),d,1),k=ri(2,4),wrongv=R((Math.floor(m.r.n/m.r.d)*k)*d+(m.r.n%m.r.d),d),ans=mul(m.r,R(k));
+      if(eq(wrongv,ans))wrongv=add(ans,R(1));
+      return {e:m.h+' × '+k,wrong:show(wrongv,'frac').split(' = ')[0],ans:ans,pref:'frac',ex:'He multiplied only the whole number. Change to an improper fraction first: '+m.imp+' × '+k+' = '+show(ans,'frac')+'.'}}
+  ];
+  var p=pick(kinds)();
+  return {q:'Sir Hasty shouts: “'+p.e+' = '+p.wrong+'!” He made a mistake. What is the correct answer?',e:p.e,ans:p.ans,pref:p.pref,hint:'Work it yourself, step by step. Then compare with Sir Hasty’s answer to spot his mistake.',ex:p.ex};
+}
+
+var FLOORS=[
+  {id:'gate',name:'The Gatehouse',skill:'Add & subtract fractions',gen:gFracAddSub,pts:10},
+  {id:'armory',name:'The Armory',skill:'Add & subtract decimals and mixed numbers',gen:gDecMixed,pts:12},
+  {id:'hall',name:'The Great Hall',skill:'Multiply & divide fractions',gen:gFracMulDiv,pts:14},
+  {id:'library',name:'Decima’s Library',skill:'Multiply & divide decimals',gen:gDecMulDiv,pts:16},
+  {id:'gallery',name:'The Knights’ Gallery',skill:'Predict the sign',gen:gSigns,pts:18},
+  {id:'granary',name:'The Rice Granary',skill:'Exponents with fractions and decimals',gen:gExp,pts:20},
+  {id:'lookout',name:'The Lookout',skill:'Estimate to check answers',gen:gEstimate,pts:22},
+  {id:'maproom',name:'The Map Room',skill:'Word problems',gen:gWord,pts:25},
+  {id:'lair',name:'The Dragon’s Lair',skill:'Find and fix the mistake',gen:gMistake,pts:30,boss:true}
+];
+var NEED=5,BOSS_HITS=6,UNLOCK=4;
+
+/* ---------- saved progress (this computer only) ---------- */
+var KEY='dragons-tower-v1',save={stars:{},gold:0};
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.stars)save=o}}catch(e){}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(save))}catch(e){}}
+function clearedCount(){return FLOORS.filter(function(f){return (save.stars[f.id]||0)>0}).length}
+
+var $=function(id){return document.getElementById(id)};
+var panel=$('panel'),game=null;
+
+function starStr(n){var s='';for(var i=0;i<3;i++)s+=i<n?'★':'<span class="off">★</span>';return s}
+function renderTower(){
+  var c=clearedCount(),html='';
+  FLOORS.forEach(function(f,i){
+    var locked=f.boss&&FLOORS.slice(0,8).filter(function(g){return (save.stars[g.id]||0)>0}).length<UNLOCK;
+    html+='<li><button type="button" class="floor'+(f.boss?' boss':'')+'" data-i="'+i+'"'+(locked?' disabled':'')+'><span class="num">'+(f.boss?'☠':i+1)+'</span><span class="nm">'+f.name+'<span class="sk">'+(locked?'Locked until you clear '+UNLOCK+' floors':f.skill)+'</span></span><span class="stars" aria-label="'+(save.stars[f.id]||0)+' of 3 stars">'+starStr(save.stars[f.id]||0)+'</span></button></li>';
+  });
+  $('floors').innerHTML=html;
+  $('gold').textContent=save.gold;$('cleared').textContent=c;
+}
+$('floors').addEventListener('click',function(e){var b=e.target.closest('.floor');if(b&&!b.disabled)start(+b.dataset.i)});
+$('resetBtn').addEventListener('click',function(){$('confirmBox').hidden=false});
+$('noReset').addEventListener('click',function(){$('confirmBox').hidden=true});
+$('yesReset').addEventListener('click',function(){save={stars:{},gold:0};persist();$('confirmBox').hidden=true;renderTower();home()});
+
+function home(){
+  game=null;
+  panel.innerHTML='<span class="eyebrow">How to play</span><h2>Storm the tower, floor by floor</h2>'+
+  '<p>Every floor practices one skill from the unit. Get '+NEED+' right to clear a floor. You have 3 hearts, and a wrong answer costs one. Finish with all 3 hearts for 3 stars.</p>'+
+  '<div class="howto"><div><b>Gold</b>Higher floors pay more gold. Get 3 in a row for a streak bonus.</div><div><b>Hints</b>Stuck? Press Hint. It shows the first step and costs nothing.</div><div><b>The dragon</b>Clear any '+UNLOCK+' floors to open the Dragon’s Lair. Fix Sir Hasty’s mistakes '+BOSS_HITS+' times to win.</div></div>'+
+  '<p class="typing">Type answers like <code>-3/4</code>, <code>1 1/2</code>, or <code>0.25</code>. Any equal answer counts, so <code>1/2</code>, <code>2/4</code>, and <code>0.5</code> are all right.</p>'+
+  report()+
+  '<div class="row"><button class="btn" type="button" id="go">'+(clearedCount()?'Climb to the next floor':'Start at the Gatehouse')+'</button></div>';
+  $('go').addEventListener('click',function(){var n=FLOORS.findIndex(function(f){return !(save.stars[f.id])&&!f.boss});start(n<0?(clearedCount()>=UNLOCK?8:0):n)});
+}
+function report(){
+  var c=clearedCount();if(!c)return '';
+  return '<div class="report"><b>Your tower so far</b> (show your teacher!)<ul>'+FLOORS.filter(function(f){return save.stars[f.id]}).map(function(f){return '<li>'+f.name+': '+save.stars[f.id]+' ★</li>'}).join('')+'</ul></div>';
+}
+
+function start(i){
+  var f=FLOORS[i];
+  game={i:i,f:f,hearts:3,right:0,streak:0,q:null,answered:false,need:f.boss?BOSS_HITS:NEED,hint:false};
+  next();
+}
+function next(){
+  var g=game,t=Math.min(4,g.right);
+  g.q=g.f.gen(t);g.answered=false;g.hint=false;
+  draw();
+}
+function statusHTML(){
+  var g=game,h='';
+  for(var i=0;i<3;i++)h+=i<g.hearts?'♥':'<span class="lost">♥</span>';
+  var prog=g.f.boss?'<div class="dragonbar">Dragon <div class="hp" role="img" aria-label="Dragon health '+(g.need-g.right)+' of '+g.need+'"><i style="width:'+((g.need-g.right)/g.need*100)+'%"></i></div></div>'
+    :'<div class="pips" role="img" aria-label="'+g.right+' of '+g.need+' correct">'+Array.from({length:g.need},function(_,k){return '<span class="pip'+(k<g.right?' on':'')+'"></span>'}).join('')+'</div>';
+  return '<div class="statusbar"><span class="hearts" aria-label="'+g.hearts+' hearts left">'+h+'</span>'+prog+'<span class="streak">Streak '+g.streak+'</span></div>';
+}
+function draw(fb){
+  var g=game,q=g.q;
+  var body='<span class="eyebrow">Floor '+(g.f.boss?'☠':g.i+1)+' · '+g.f.skill+'</span><h2>'+g.f.name+'</h2>'+statusHTML()+
+    '<div class="problem" id="prob"><p class="qtext">'+q.q+'</p>'+(q.e&&!/Sir Hasty/.test(q.q)?'<div class="expr">'+q.e+'</div>':'');
+  if(q.choices){
+    body+='<div class="choices">'+q.choices.map(function(c,k){return '<button type="button" class="choice" data-k="'+k+'"'+(g.answered?' disabled':'')+'>'+c+'</button>'}).join('')+'</div>';
+  }else{
+    body+='<form class="answer-row" id="form"><label class="sr" for="ans">Your answer</label><input type="text" id="ans" autocomplete="off" inputmode="text" placeholder="Your answer"'+(g.answered?' disabled':'')+'><button class="btn" type="submit"'+(g.answered?' disabled':'')+'>Check</button></form>';
+  }
+  if(g.hint)body+='<p class="hint"><b>Hint:</b> '+q.hint+'</p>';
+  body+='</div>';
+  if(fb)body+=fb;
+  body+='<div class="row">'+(g.answered?'<button class="btn" type="button" id="nextBtn">Next</button>':'<button class="btn ghost" type="button" id="hintBtn"'+(g.hint?' disabled':'')+'>Hint</button>')+'<button class="btn ghost" type="button" id="leave">Back to the tower</button></div>';
+  panel.innerHTML=body;
+  if($('form'))$('form').addEventListener('submit',function(e){e.preventDefault();check($('ans').value)});
+  panel.querySelectorAll('.choice').forEach(function(b){b.addEventListener('click',function(){check(+b.dataset.k)})});
+  if($('hintBtn'))$('hintBtn').addEventListener('click',function(){g.hint=true;var v=$('ans')?$('ans').value:'';draw();if($('ans')){$('ans').value=v;$('ans').focus()}});
+  if($('nextBtn')){$('nextBtn').addEventListener('click',after);$('nextBtn').focus()}
+  $('leave').addEventListener('click',function(){renderTower();home()});
+  if($('ans')&&!g.answered)$('ans').focus({preventScroll:true});
+}
+function check(v){
+  var g=game,q=g.q,ok,yours='';
+  if(q.choices){ok=v===q.correct;yours=q.choices[v].replace(/<small>.*<\/small>/,'')}
+  else{
+    var r=parse(v);
+    if(!r){draw('<div class="feedback no"><span class="big">I can’t read that answer.</span><span>Try a form like -3/4, 1 1/2, or 0.25.</span></div>');return}
+    ok=eq(r,q.ans);
+  }
+  g.answered=true;
+  var fb;
+  if(ok){
+    g.right++;g.streak++;
+    var bonus=g.streak>=3?5:0;g.gainedGold=(g.gainedGold||0)+g.f.pts+bonus;
+    fb='<div class="feedback ok pop"><span class="big">'+(g.f.boss?'Direct hit! ':'Correct! ')+'+'+(g.f.pts+bonus)+' gold'+(bonus?' (streak bonus!)':'')+'</span><span>'+q.ex+'</span></div>';
+  }else{
+    g.hearts--;g.streak=0;
+    var right=q.choices?q.choices[q.correct].replace(/<small>.*<\/small>/,''):show(q.ans,q.pref);
+    fb='<div class="feedback no"><span class="big">'+(g.f.boss?'The dragon breathes fire! ':'Not quite. ')+'The answer is '+right+'.</span><span>'+q.ex+'</span></div>';
+  }
+  draw(fb);
+  if(!ok){var p=$('prob');if(p)p.classList.add('shake')}
+}
+function after(){
+  var g=game;
+  if(g.right>=g.need)return finish(true);
+  if(g.hearts<=0)return finish(false);
+  next();
+}
+function finish(won){
+  var g=game,stars=won?g.hearts:0,html;
+  if(won){
+    var prev=save.stars[g.f.id]||0;if(stars>prev)save.stars[g.f.id]=stars;
+    save.gold+=g.gainedGold||0;persist();renderTower();
+    var nextI=FLOORS.findIndex(function(f,k){return k>g.i&&!f.boss&&!save.stars[f.id]});
+    var lairOpen=FLOORS.slice(0,8).filter(function(f){return save.stars[f.id]}).length>=UNLOCK;
+    html='<div class="end"><span class="eyebrow">'+g.f.name+'</span><h2>'+(g.f.boss?'You defeated the dragon!':'Floor cleared!')+'</h2>'+
+      '<div class="bigstars" aria-label="'+stars+' of 3 stars">'+starStr(stars)+'</div>'+
+      '<p>You earned '+(g.gainedGold||0)+' gold. '+(stars<3?'Clear it again with all 3 hearts for 3 stars.':'Perfect run!')+'</p>'+
+      report()+
+      '<div class="row">'+(g.f.boss?'':(nextI>=0?'<button class="btn" type="button" id="nextFloor">Climb to '+FLOORS[nextI].name+'</button>':(lairOpen&&!save.stars.lair?'<button class="btn" type="button" id="toLair">Face the dragon</button>':'')))+
+      '<button class="btn ghost" type="button" id="again">Play this floor again</button><button class="btn ghost" type="button" id="back">Back to the tower</button></div></div>';
+  }else{
+    html='<div class="end"><span class="eyebrow">'+g.f.name+'</span><h2>'+(g.f.boss?'The dragon drove you back':'The guards pushed you back')+'</h2>'+
+      '<p>You got '+g.right+' of '+g.need+' before running out of hearts. Read the hints and try again. You’ll get new problems.</p>'+
+      '<div class="row"><button class="btn" type="button" id="again">Try again</button><button class="btn ghost" type="button" id="back">Back to the tower</button></div></div>';
+  }
+  panel.innerHTML=html;
+  var gi=g.i;
+  if($('nextFloor'))$('nextFloor').addEventListener('click',function(){start(nextI)});
+  if($('toLair'))$('toLair').addEventListener('click',function(){start(8)});
+  $('again').addEventListener('click',function(){start(gi)});
+  $('back').addEventListener('click',home);
+  game=null;
+}
+
+renderTower();home();
+})();
+</script>
+</body>
+</html>
